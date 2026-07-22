@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fieldnotes — Skin & Symptom Check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F5F7F4;
+    --surface: #FFFFFF;
+    --ink: #1B2E2A;
+    --ink-soft: #4C5F5A;
+    --primary: #2D6A63;
+    --primary-dim: #E4EDEB;
+    --caution: #C97A3D;
+    --caution-dim: #FBEDE1;
+    --urgent: #B23A3A;
+    --urgent-dim: #FBE7E7;
+    --muted: #7E948E;
+    --line: #DCE3E0;
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .display{font-family:'Fraunces', serif;}
+  .mono{font-family:'IBM Plex Mono', monospace; letter-spacing:0.02em;}
+
+  a{color:inherit;}
+  button{font-family:inherit;}
+
+  /* ---------- shell ---------- */
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px;}
+
+  header.top{
+    border-bottom:1px solid var(--line);
+    background:var(--surface);
+  }
+  .top-inner{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 24px;
+    max-width:1080px; margin:0 auto;
+  }
+  .brand{
+    display:flex; align-items:baseline; gap:10px;
+  }
+  .brand .mark{
+    width:28px; height:28px; border-radius:8px;
+    background:var(--primary);
+    display:inline-flex; align-items:center; justify-content:center;
+    color:#fff; font-family:'Fraunces', serif; font-weight:600; font-size:15px;
+  }
+  .brand .name{font-family:'Fraunces', serif; font-weight:600; font-size:19px;}
+  .brand .tag{font-size:12px; color:var(--muted);}
+  .top-note{
+    font-size:12px; color:var(--muted); max-width:280px; text-align:right;
+    display:none;
+  }
+  @media(min-width:720px){ .top-note{display:block;} }
+
+  /* ---------- disclaimer strip ---------- */
+  .disclaimer{
+    background:var(--ink); color:#EDEFEE;
+    font-size:13px;
+    padding:10px 24px;
+  }
+  .disclaimer .wrap{display:flex; gap:10px; align-items:flex-start; padding:0;}
+  .disclaimer b{color:#fff;}
+  .disclaimer svg{flex-shrink:0; margin-top:2px;}
+
+  /* ---------- hero / intake ---------- */
+  .intake{
+    padding:56px 24px 40px;
+  }
+  .intake-grid{
+    display:grid; grid-template-columns: 1fr; gap:40px;
+    max-width:1080px; margin:0 auto;
+  }
+  @media(min-width:860px){
+    .intake-grid{grid-template-columns: 1.1fr 1fr; align-items:center;}
+  }
+  h1.display{
+    font-size:clamp(32px, 5vw, 46px);
+    font-weight:600;
+    line-height:1.08;
+    margin:0 0 16px;
+    letter-spacing:-0.01em;
+  }
+  h1 .accent{color:var(--primary); font-style:italic; font-weight:500;}
+  .lede{color:var(--ink-soft); font-size:16px; max-width:46ch; margin:0 0 28px;}
+
+  .search-row{
+    display:flex; gap:8px; margin-bottom:14px;
+  }
+  .search-row input{
+    flex:1; padding:14px 16px; border-radius:10px; border:1.5px solid var(--line);
+    font-size:15px; background:var(--surface); color:var(--ink);
+  }
+  .search-row input:focus{outline:2px solid var(--primary); outline-offset:1px; border-color:var(--primary);}
+  .search-row button{
+    padding:14px 20px; border-radius:10px; border:none; background:var(--ink);
+    color:#fff; font-weight:500; cursor:pointer; font-size:14px;
+  }
+  .search-row button:hover{background:var(--primary);}
+  .quick-tags{display:flex; flex-wrap:wrap; gap:8px;}
+  .quick-tags button{
+    border:1px solid var(--line); background:var(--surface); color:var(--ink-soft);
+    padding:7px 13px; border-radius:100px; font-size:13px; cursor:pointer;
+  }
+  .quick-tags button:hover{border-color:var(--primary); color:var(--primary);}
+
+  /* ---------- body map (signature element) ---------- */
+  .mapcard{
+    background:var(--surface); border:1px solid var(--line); border-radius:20px;
+    padding:24px; position:relative;
+  }
+  .mapcard .caption{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:6px;
+  }
+  .mapcard .caption .lbl{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em;}
+  .mapcard .caption .lbl.mono{font-family:'IBM Plex Mono', monospace;}
+  .bodymap-svg{width:100%; height:auto; display:block; margin:8px auto 0;}
+  .region{
+    fill:#EEF3F1; stroke:var(--line); stroke-width:1.5; cursor:pointer;
+    transition:fill .15s ease, stroke .15s ease;
+  }
+  .region:hover{fill:var(--primary-dim); stroke:var(--primary);}
+  .region.active{fill:var(--primary); stroke:var(--primary);}
+  .region-label{
+    font-family:'IBM Plex Mono', monospace; font-size:9px; fill:var(--muted);
+    pointer-events:none;
+  }
+  .map-hint{font-size:12.5px; color:var(--muted); text-align:center; margin-top:10px;}
+
+  /* ---------- intake panel ---------- */
+  .panel{
+    display:none;
+    background:var(--surface); border-top:1px solid var(--line);
+    padding:44px 24px 60px;
+  }
+  .panel.open{display:block;}
+  .panel-inner{max-width:760px; margin:0 auto;}
+
+  .chart-head{
+    display:flex; align-items:center; gap:12px; margin-bottom:6px;
+  }
+  .chart-num{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--primary);
+    border:1px solid var(--primary); border-radius:100px; padding:2px 10px;
+  }
+  .chart-region{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em;}
+  .panel h2.display{font-size:28px; margin:8px 0 4px; font-weight:600;}
+  .panel .sub{color:var(--ink-soft); font-size:14.5px; margin:0 0 30px;}
+
+  fieldset{border:none; padding:0; margin:0 0 30px;}
+  legend{
+    font-weight:600; font-size:14px; margin-bottom:12px; display:block;
+  }
+  .symptom-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr)); gap:10px;
+  }
+  .chk{
+    display:flex; align-items:flex-start; gap:9px; padding:12px 14px;
+    border:1.5px solid var(--line); border-radius:10px; cursor:pointer;
+    font-size:14px; background:var(--bg);
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .chk:hover{border-color:var(--primary);}
+  .chk input{margin-top:2px; accent-color:var(--primary);}
+  .chk.flagged{border-color:var(--urgent); background:var(--urgent-dim);}
+  .chk.flagged .flag-mark{color:var(--urgent); font-size:11px; font-weight:600; margin-left:4px;}
+
+  .row-2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media(max-width:560px){.row-2{grid-template-columns:1fr;}}
+  select, .textish{
+    width:100%; padding:12px 14px; border-radius:10px; border:1.5px solid var(--line);
+    font-size:14px; background:var(--bg); color:var(--ink); font-family:inherit;
+  }
+
+  .scale{display:flex; gap:6px;}
+  .scale button{
+    flex:1; padding:10px 0; border-radius:8px; border:1.5px solid var(--line);
+    background:var(--bg); font-size:13px; cursor:pointer; color:var(--ink-soft);
+  }
+  .scale button.sel{background:var(--primary); border-color:var(--primary); color:#fff;}
+
+  .cta-row{display:flex; gap:12px; margin-top:36px; flex-wrap:wrap;}
+  .btn-primary{
+    background:var(--primary); color:#fff; border:none; padding:14px 26px;
+    border-radius:10px; font-weight:500; font-size:15px; cursor:pointer;
+  }
+  .btn-primary:hover{background:#245650;}
+  .btn-ghost{
+    background:transparent; color:var(--ink-soft); border:1.5px solid var(--line);
+    padding:14px 22px; border-radius:10px; font-size:15px; cursor:pointer;
+  }
+  .btn-ghost:hover{border-color:var(--muted);}
+
+  /* ---------- results ---------- */
+  .results{display:none; padding:20px 24px 70px; background:var(--bg);}
+  .results.open{display:block;}
+  .results-inner{max-width:760px; margin:0 auto;}
+
+  .triage-banner{
+    border-radius:16px; padding:26px 24px; margin-bottom:28px;
+    display:flex; gap:16px; align-items:flex-start;
+  }
+  .triage-banner.urgent{background:var(--urgent); color:#fff;}
+  .triage-banner.caution{background:var(--caution-dim); border:1.5px solid var(--caution); color:#5c3111;}
+  .triage-banner.routine{background:var(--primary-dim); border:1.5px solid var(--primary); color:#173933;}
+  .triage-banner h3{margin:0 0 6px; font-family:'Fraunces', serif; font-size:20px; font-weight:600;}
+  .triage-banner p{margin:0; font-size:14.5px; line-height:1.55;}
+  .triage-banner .icon{flex-shrink:0; margin-top:2px;}
+
+  .results h2.display{font-size:22px; font-weight:600; margin:0 0 4px;}
+  .section-label{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--muted);
+    text-transform:uppercase; letter-spacing:0.09em; margin:34px 0 14px;
+  }
+
+  .cause-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:18px 20px; margin-bottom:10px;
+  }
+  .cause-card .name{font-weight:600; font-size:15px; margin-bottom:4px;}
+  .cause-card .desc{font-size:13.5px; color:var(--ink-soft); line-height:1.55;}
+  .likelihood{
+    display:inline-block; font-family:'IBM Plex Mono', monospace; font-size:10.5px;
+    padding:2px 8px; border-radius:100px; margin-bottom:8px; letter-spacing:0.04em;
+  }
+  .likelihood.common{background:var(--primary-dim); color:var(--primary);}
+  .likelihood.possible{background:var(--caution-dim); color:var(--caution);}
+
+  .confidence-row{display:flex; align-items:center; gap:10px; margin:8px 0 10px;}
+  .confidence-track{flex:1; height:6px; background:var(--line); border-radius:100px; overflow:hidden;}
+  .confidence-fill{height:100%; background:var(--primary); border-radius:100px;}
+  .confidence-pct{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--primary); min-width:38px; text-align:right;}
+
+  .selfcare ul{margin:0; padding-left:18px; font-size:14px; color:var(--ink-soft);}
+  .selfcare li{margin-bottom:8px;}
+
+  .disclaimer-full{
+    background:var(--ink); color:#EDEFEE; border-radius:14px; padding:20px 22px;
+    font-size:13px; line-height:1.6; margin-top:34px;
+  }
+  .disclaimer-full b{color:#fff;}
+
+  .restart{
+    display:inline-flex; align-items:center; gap:6px; margin-top:26px;
+    background:none; border:1.5px solid var(--line); color:var(--ink-soft);
+    padding:11px 18px; border-radius:10px; cursor:pointer; font-size:14px;
+  }
+  .restart:hover{border-color:var(--primary); color:var(--primary);}
+
+  footer{
+    text-align:center; padding:26px 24px 40px; color:var(--muted); font-size:12.5px;
+  }
+
+  .visually-hidden{
+    position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important; scroll-behavior:auto !important;}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <span class="mark">F</span>
+      <span class="name">Fieldnotes</span>
+      <span class="tag">— symptom &amp; skin check</span>
+    </div>
+    <div class="top-note">A guided way to think through what you're noticing. Not a diagnosis.</div>
+  </div>
+</header>
+
+<div class="disclaimer">
+  <div class="wrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EDEFEE" stroke-width="2" style="margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12.01" y2="16.5"/></svg>
+    <div><b>This tool doesn't diagnose anything.</b> It organizes what you're noticing into questions worth asking a clinician. If you're worried about something urgent, don't wait on this — call your local emergency number or go to urgent care.</div>
+  </div>
+</div>
+
+<!-- ================= INTAKE / HERO ================= -->
+<section class="intake" id="intake-section">
+  <div class="intake-grid wrap">
+    <div>
+      <h1 class="display">What are you <span class="accent">noticing</span>, and where?</h1>
+      <p class="lede">Pick a spot on the chart, or search a symptom below. We'll ask a few short questions and hand you back questions worth bringing to a real clinician — not a verdict.</p>
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="e.g. itchy red patch, sore throat, headache…" aria-label="Search a symptom">
+        <button id="searchBtn">Start</button>
+      </div>
+      <div class="quick-tags">
+        <button data-region="skin">Rash / skin</button>
+        <button data-region="head">Headache</button>
+        <button data-region="chest">Chest / breathing</button>
+        <button data-region="abdomen">Stomach</button>
+        <button data-region="joints">Joint / muscle</button>
+      </div>
+    </div>
+
+    <div class="mapcard">
+      <div class="caption">
+        <span class="lbl">Patient chart</span>
+        <span class="lbl mono" id="chartId">no. 000</span>
+      </div>
+      <svg class="bodymap-svg" viewBox="0 0 220 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Clickable body map to select symptom area">
+        <!-- head -->
+        <circle class="region" data-region="head" data-label="Head / face" cx="110" cy="42" r="30"/>
+        <text class="region-label" x="110" y="95" text-anchor="middle">HEAD</text>
+        <!-- chest -->
+        <rect class="region" data-region="chest" data-label="Chest / breathing" x="72" y="95" width="76" height="70" rx="14"/>
+        <text class="region-label" x="110" y="135" text-anchor="middle">CHEST</text>
+        <!-- abdomen -->
+        <rect class="region" data-region="abdomen" data-label="Stomach / abdomen" x="76" y="170" width="68" height="60" rx="14"/>
+        <text class="region-label" x="110" y="204" text-anchor="middle">ABD.</text>
+        <!-- left arm (skin) -->
+        <rect class="region" data-region="skin" data-label="Skin / rash" x="30" y="100" width="34" height="120" rx="16"/>
+        <!-- right arm (skin) -->
+        <rect class="region" data-region="skin" data-label="Skin / rash" x="156" y="100" width="34" height="120" rx="16"/>
+        <text class="region-label" x="47" y="230" text-anchor="middle">SKIN</text>
+        <text class="region-label" x="173" y="230" text-anchor="middle">SKIN</text>
+        <!-- legs / joints -->
+        <rect class="region" data-region="joints" data-label="Joint / muscle" x="80" y="235" width="26" height="140" rx="13"/>
+        <rect class="region" data-region="joints" data-label="Joint / muscle" x="114" y="235" width="26" height="140" rx="13"/>
+        <text class="region-label" x="110" y="392" text-anchor="middle">JOINTS</text>
+      </svg>
+      <div class="map-hint">Tap a region to open its intake questions</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PANEL (dynamic per region) ================= -->
+<section class="panel" id="panel">
+  <div class="panel-inner">
+    <div class="chart-head">
+      <span class="chart-num mono" id="panelStep">01</span>
+      <span class="chart-region" id="panelRegionLabel">REGION</span>
+    </div>
+    <h2 class="display" id="panelTitle">Tell us more</h2>
+    <p class="sub" id="panelSub">Select everything that applies. You can leave things blank if unsure.</p>
+
+    <form id="intakeForm">
+      <fieldset>
+        <legend>What are you noticing? <span style="color:var(--muted); font-weight:400;">(select all that apply)</span></legend>
+        <div class="symptom-grid" id="symptomGrid"></div>
+      </fieldset>
+
+      <div class="row-2">
+        <fieldset>
+          <legend>How long has this been going on?</legend>
+          <select id="duration">
+            <option value="hours">A few hours</option>
+            <option value="1-2days">1–2 days</option>
+            <option value="week">About a week</option>
+            <option value="weeks">Several weeks</option>
+            <option value="months">Months or longer</option>
+          </select>
+        </fieldset>
+        <fieldset>
+          <legend>How would you rate it?</legend>
+          <div class="scale" id="severityScale">
+            <button type="button" data-val="1">Mild</button>
+            <button type="button" data-val="2">Moderate</button>
+            <button type="button" data-val="3">Severe</button>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="cta-row">
+        <button type="submit" class="btn-primary">See what this could point to</button>
+        <button type="button" class="btn-ghost" id="backBtn">Back to chart</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ================= RESULTS ================= -->
+<section class="results" id="results">
+  <div class="results-inner">
+    <div id="triageBanner"></div>
+
+    <div class="section-label">Diagnostic report — pattern-based estimate</div>
+    <div class="cause-card" style="border-color:var(--primary); background:var(--primary-dim);">
+      <div class="desc" id="reportNote" style="color:var(--ink);">Matching your answers against common symptom patterns.</div>
+    </div>
+
+    <div class="section-label">Worth asking a clinician about</div>
+    <div id="causeList"></div>
+
+    <div class="section-label">In the meantime</div>
+    <div class="cause-card selfcare">
+      <div class="desc" id="selfcareText">General comfort measures while you decide next steps.</div>
+    </div>
+
+    <div class="disclaimer-full">
+      <b>The percentages above are not a medical diagnosis.</b> They only measure how many symptoms you selected overlap with patterns we've listed for common, general conditions — nothing here accounts for your full history, an exam, or test results, which is what an actual diagnosis requires. A high percentage doesn't mean "this is what you have," and a low one doesn't rule anything out. Only a clinician who can examine you can tell you what's really going on. If symptoms are severe, sudden, or getting worse, please seek in-person care rather than relying on this.
+    </div>
+
+    <button class="restart" id="restartBtn">← Start a new check</button>
+  </div>
+</section>
+
+<footer>Fieldnotes is an educational tool, not a medical device or diagnostic service.</footer>
+
+<script>
+(function(){
+  const DATA = {
+    skin: {
+      title: "Let's look at your skin",
+      sub: "A few details about the area helps narrow down what's worth mentioning to a clinician.",
+      symptoms: [
+        {id:"redness", label:"Redness or discoloration"},
+        {id:"itch", label:"Itching"},
+        {id:"bumps", label:"Raised bumps or hives"},
+        {id:"scaly", label:"Dry, flaky, or scaly patches"},
+        {id:"blister", label:"Blisters or fluid-filled spots"},
+        {id:"spreading", label:"Spreading quickly", flag:true},
+        {id:"pain_skin", label:"Painful to touch"},
+        {id:"fever_rash", label:"Rash with fever", flag:true},
+        {id:"swelling_face", label:"Swelling of face, lips, or throat", flag:true},
+        {id:"warm", label:"Warm or hot area"},
+      ],
+      causes: [
+        {name:"Contact dermatitis", tier:"common", match:["redness","itch","scaly","warm","pain_skin"], desc:"Skin reacting to something it touched — soap, plant, jewelry, or fabric are common triggers."},
+        {name:"Eczema flare", tier:"common", match:["itch","scaly","redness"], desc:"Dry, itchy, inflamed patches, often in skin folds, that come and go with triggers like stress or weather."},
+        {name:"Hives (urticaria)", tier:"possible", match:["bumps","itch","swelling_face"], desc:"Raised, itchy welts that can appear suddenly, often linked to an allergic trigger or unknown cause."},
+        {name:"Fungal infection", tier:"possible", match:["scaly","itch","redness"], desc:"Ring-shaped, scaly patches that spread slowly, often in warm or damp areas of skin."},
+      ],
+      selfcare: "Keep the area clean and dry, avoid scratching, use a fragrance-free moisturizer, and note anything new you've touched, eaten, or applied recently — that detail is genuinely useful for a clinician."
+    },
+    head: {
+      title: "Let's talk about the headache",
+      sub: "Headaches range from ordinary to a signal worth acting on quickly — these questions help sort that out.",
+      symptoms: [
+        {id:"throbbing", label:"Throbbing or pulsing pain"},
+        {id:"one_side", label:"Pain mostly on one side"},
+        {id:"nausea", label:"Nausea or vomiting"},
+        {id:"light_sound", label:"Sensitive to light or sound"},
+        {id:"worst_ever", label:"Worst headache you've ever had", flag:true},
+        {id:"sudden_onset", label:"Came on suddenly, like a thunderclap", flag:true},
+        {id:"vision", label:"Vision changes", flag:true},
+        {id:"neck_stiff", label:"Stiff neck with fever", flag:true},
+        {id:"after_injury", label:"Started after a head injury", flag:true},
+        {id:"tight_band", label:"Feels like a tight band around the head"},
+      ],
+      causes: [
+        {name:"Tension headache", tier:"common", match:["tight_band","one_side"], desc:"A dull, band-like ache often tied to stress, poor sleep, or long screen time."},
+        {name:"Migraine", tier:"common", match:["throbbing","one_side","nausea","light_sound"], desc:"Throbbing pain, often one-sided, sometimes with nausea or light sensitivity."},
+        {name:"Dehydration or missed meals", tier:"common", match:["tight_band","nausea"], desc:"A surprisingly frequent, easily overlooked cause of dull, all-over head pain."},
+        {name:"Sinus pressure", tier:"possible", match:["tight_band"], desc:"Pain and pressure around the forehead, cheeks, or eyes, often with congestion."},
+      ],
+      selfcare: "Hydrate, rest somewhere dim and quiet, and track when it happens alongside sleep, meals, and screen time. If any flagged item above applies to you, treat it as urgent rather than waiting this out."
+    },
+    chest: {
+      title: "Let's talk about your chest",
+      sub: "Chest symptoms deserve extra caution — a few of these questions are here specifically to catch anything urgent.",
+      symptoms: [
+        {id:"tight", label:"Tightness or pressure"},
+        {id:"sharp", label:"Sharp pain when breathing"},
+        {id:"cough", label:"Persistent cough"},
+        {id:"short_breath", label:"Shortness of breath", flag:true},
+        {id:"radiating", label:"Pain spreading to arm, jaw, or back", flag:true},
+        {id:"dizzy", label:"Dizziness or fainting", flag:true},
+        {id:"heart_racing", label:"Racing or irregular heartbeat", flag:true},
+        {id:"sweating", label:"Sudden sweating with the pain", flag:true},
+        {id:"worse_lying", label:"Worse when lying flat"},
+        {id:"anxiety_link", label:"Started during a stressful or anxious moment"},
+      ],
+      causes: [
+        {name:"Muscle strain", tier:"common", match:["sharp","worse_lying"], desc:"Sharp, localized pain that worsens with certain movements or breathing, often after activity."},
+        {name:"Acid reflux", tier:"common", match:["tight","worse_lying"], desc:"A burning sensation behind the breastbone, often after eating or when lying down."},
+        {name:"Anxiety-related chest tightness", tier:"possible", match:["tight","heart_racing","anxiety_link"], desc:"Tightness or a racing heart tied to stress, without other warning signs."},
+      ],
+      selfcare: "If nothing flagged applies, rest and monitor. But chest symptoms with any flagged item — especially pain spreading to the arm/jaw, shortness of breath, or fainting — need emergency care now, not self-care."
+    },
+    abdomen: {
+      title: "Let's talk about your stomach",
+      sub: "Location and timing matter a lot here — a few quick questions will help.",
+      symptoms: [
+        {id:"cramping", label:"Cramping pain"},
+        {id:"bloating", label:"Bloating"},
+        {id:"nausea_ab", label:"Nausea or vomiting"},
+        {id:"diarrhea", label:"Diarrhea"},
+        {id:"constipation", label:"Constipation"},
+        {id:"severe_pain", label:"Sudden, severe pain", flag:true},
+        {id:"blood", label:"Blood in vomit or stool", flag:true},
+        {id:"rigid", label:"Belly feels rigid or very tender", flag:true},
+        {id:"fever_ab", label:"Fever alongside the pain", flag:true},
+        {id:"after_eating", label:"Worse after eating certain foods"},
+      ],
+      causes: [
+        {name:"Indigestion", tier:"common", match:["cramping","bloating","after_eating"], desc:"Discomfort after eating, often linked to rich, fatty, or large meals."},
+        {name:"Gastroenteritis (stomach bug)", tier:"common", match:["nausea_ab","diarrhea","cramping"], desc:"Nausea, diarrhea, and cramping, usually resolving within a few days."},
+        {name:"Food intolerance", tier:"possible", match:["bloating","after_eating","diarrhea"], desc:"Recurring bloating or cramping tied to specific foods like dairy or gluten."},
+      ],
+      selfcare: "Stick to bland foods, sip water steadily, and rest. Sudden severe pain, a rigid or very tender belly, or blood in vomit/stool are signs to get seen in person right away."
+    },
+    joints: {
+      title: "Let's talk about the joint or muscle",
+      sub: "A few questions about how it started and how it feels help narrow this down.",
+      symptoms: [
+        {id:"swelling_joint", label:"Swelling around the joint"},
+        {id:"stiff_morning", label:"Stiff, especially in the morning"},
+        {id:"warm_joint", label:"Warm or red over the joint"},
+        {id:"after_activity", label:"Started after activity or a fall"},
+        {id:"cant_bear_weight", label:"Can't bear weight or use the limb", flag:true},
+        {id:"deformed", label:"Looks visibly deformed or out of place", flag:true},
+        {id:"fever_joint", label:"Fever with the joint pain", flag:true},
+        {id:"multiple_joints", label:"Affecting several joints at once"},
+        {id:"numbness", label:"Numbness or tingling nearby"},
+      ],
+      causes: [
+        {name:"Muscle strain or overuse", tier:"common", match:["after_activity"], desc:"Soreness following activity, typically improving with rest over a few days."},
+        {name:"Mild sprain", tier:"common", match:["swelling_joint","after_activity"], desc:"Pain and swelling near a joint after an awkward movement or minor fall."},
+        {name:"Early arthritis-type stiffness", tier:"possible", match:["stiff_morning","swelling_joint","multiple_joints"], desc:"Morning stiffness or ache in one or more joints that eases through the day."},
+      ],
+      selfcare: "Rest, ice, gentle compression, and elevation help most minor strains. Inability to bear weight, visible deformity, or fever with joint pain are reasons to get an in-person exam rather than waiting."
+    }
+  };
+
+  const searchMap = {
+    "rash":"skin","itch":"skin","itchy":"skin","hive":"skin","hives":"skin","skin":"skin","eczema":"skin","acne":"skin",
+    "headache":"head","migraine":"head","head":"head",
+    "chest":"chest","breath":"chest","breathing":"chest","heart":"chest","cough":"chest",
+    "stomach":"abdomen","abdomen":"abdomen","nausea":"abdomen","diarrhea":"abdomen","belly":"abdomen",
+    "joint":"joints","muscle":"joints","knee":"joints","back":"joints","sprain":"joints"
+  };
+
+  let state = { region:null, severity:null };
+  let chartCounter = Math.floor(Math.random()*900)+100;
+
+  const intakeSection = document.getElementById('intake-section');
+  const panel = document.getElementById('panel');
+  const results = document.getElementById('results');
+
+  function openRegion(region, label){
+    state.region = region;
+    const d = DATA[region];
+    document.getElementById('chartId').textContent = 'no. ' + (chartCounter++);
+    document.getElementById('panelRegionLabel').textContent = (label || region).toUpperCase();
+    document.getElementById('panelTitle').textContent = d.title;
+    document.getElementById('panelSub').textContent = d.sub;
+
+    const grid = document.getElementById('symptomGrid');
+    grid.innerHTML = '';
+    d.symptoms.forEach(s => {
+      const label = document.createElement('label');
+      label.className = 'chk' + (s.flag ? ' flagged' : '');
+      label.innerHTML = `<input type="checkbox" value="${s.id}" data-flag="${!!s.flag}" data-label="${s.label}"> <span>${s.label}${s.flag ? '<span class="flag-mark">· mention promptly</span>' : ''}</span>`;
+      grid.appendChild(label);
+    });
+
+    // reset severity
+    state.severity = null;
+    document.querySelectorAll('.scale button').forEach(b => b.classList.remove('sel'));
+
+    document.querySelectorAll('.region').forEach(r => r.classList.toggle('active', r.dataset.region === region));
+
+    panel.classList.add('open');
+    results.classList.remove('open');
+    setTimeout(()=> panel.scrollIntoView({behavior:'smooth', block:'start'}), 50);
+  }
+
+  document.querySelectorAll('.region').forEach(el => {
+    el.addEventListener('click', () => openRegion(el.dataset.region, el.dataset.label));
+  });
+  document.querySelectorAll('.quick-tags button').forEach(el => {
+    el.addEventListener('click', () => openRegion(el.dataset.region, el.textContent));
+  });
+
+  document.getElementById('searchBtn').addEventListener('click', doSearch);
+  document.getElementById('searchInput').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); doSearch(); } });
+  function doSearch(){
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    let found = null;
+    Object.keys(searchMap).forEach(k => { if(q.includes(k) && !found) found = searchMap[k]; });
+    openRegion(found || 'skin', found ? null : 'General');
+  }
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    panel.classList.remove('open');
+    intakeSection.scrollIntoView({behavior:'smooth'});
+  });
+
+  document.querySelectorAll('#severityScale button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#severityScale button').forEach(x=>x.classList.remove('sel'));
+      b.classList.add('sel');
+      state.severity = b.dataset.val;
+    });
+  });
+
+  document.getElementById('intakeForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const checked = Array.from(document.querySelectorAll('#symptomGrid input:checked'));
+    const flaggedChecked = checked.filter(c => c.dataset.flag === 'true');
+    const duration = document.getElementById('duration').value;
+    const severity = state.severity || '1';
+    renderResults(checked, flaggedChecked, duration, severity);
+  });
+
+  function renderResults(checked, flagged, duration, severity){
+    const d = DATA[state.region];
+    const banner = document.getElementById('triageBanner');
+    let tier, headline, body;
+
+    if(flagged.length > 0){
+      tier = 'urgent';
+      headline = "This is worth acting on now";
+      body = "You checked something that can signal a more urgent issue: " +
+        flagged.map(f=>f.dataset.label.toLowerCase()).join(', ') +
+        ". Please contact a doctor promptly, use an urgent care line, or go to an emergency department if it's severe or worsening.";
+    } else if(severity === '3' || duration === 'weeks' || duration === 'months'){
+      tier = 'caution';
+      headline = "Worth booking a real appointment";
+      body = "Nothing you flagged looks emergency-level, but the severity or how long this has lasted means it's worth getting an actual clinician to look at it soon, rather than waiting it out.";
+    } else {
+      tier = 'routine';
+      headline = "Likely manageable, worth watching";
+      body = "Based on what you shared, this looks like something common and often self-limited. Keep an eye on it, and get it checked if it changes, spreads, or doesn't ease up.";
+    }
+
+    const iconSvg = tier === 'urgent'
+      ? '<svg class="icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+      : '<svg class="icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12.01" y2="16.5"/></svg>';
+
+    banner.innerHTML = `<div class="triage-banner ${tier}">${iconSvg}<div><h3>${headline}</h3><p>${body}</p></div></div>`;
+
+    const causeList = document.getElementById('causeList');
+    causeList.innerHTML = '';
+
+    const checkedIds = checked.map(c => c.value);
+    const scored = d.causes.map(c => {
+      const m = (c.match || []);
+      const overlap = m.filter(id => checkedIds.includes(id)).length;
+      // base score from overlap ratio, floor so results never claim certainty
+      let pct = m.length ? Math.round((overlap / m.length) * 78) : 20;
+      if(overlap === 0) pct = Math.max(12, pct - 10);
+      pct = Math.min(pct, 82); // hard cap — this is pattern-matching, never a confirmed diagnosis
+      return Object.assign({}, c, {pct});
+    }).sort((a,b) => b.pct - a.pct);
+
+    document.getElementById('reportNote').innerHTML =
+      `Out of ${checked.length || 0} symptom${checked.length===1?'':'s'} selected, here's how closely each common pattern lines up with what you described. <b>These percentages reflect symptom overlap only</b> — they are not a clinical probability and are capped well below certainty on purpose.`;
+
+    scored.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'cause-card';
+      card.innerHTML = `<span class="likelihood ${c.tier}">${c.tier === 'common' ? 'Commonly seen' : 'Sometimes the cause'}</span>
+        <div class="name">${c.name}</div>
+        <div class="confidence-row">
+          <div class="confidence-track"><div class="confidence-fill" style="width:${c.pct}%"></div></div>
+          <span class="confidence-pct">${c.pct}%</span>
+        </div>
+        <div class="desc">${c.desc}</div>`;
+      causeList.appendChild(card);
+    });
+
+    document.getElementById('selfcareText').textContent = d.selfcare;
+
+    panel.classList.remove('open');
+    results.classList.add('open');
+    setTimeout(()=> results.scrollIntoView({behavior:'smooth', block:'start'}), 50);
+  }
+
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    results.classList.remove('open');
+    document.getElementById('intakeForm').reset();
+    document.querySelectorAll('.region').forEach(r=>r.classList.remove('active'));
+    intakeSection.scrollIntoView({behavior:'smooth'});
+  });
+})();
+</script>
+
+</body>
+</html>
